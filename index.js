@@ -2,8 +2,6 @@ require('dotenv').config()
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const cTable = require('console.table');
-const { response } = require('express');
-const PORT = 3001;
 
 //CONNECT TO THE LOCAL DATABASE
 const db = mysql.createConnection(
@@ -17,7 +15,7 @@ const db = mysql.createConnection(
 );
 
 function init() {
-    const directory = inquirer
+    inquirer
         .prompt([
             {
                 type: 'list',
@@ -34,10 +32,8 @@ function init() {
             }
         ])
         .then((response) => {
-            const choice = response.directory
-            directoryChoice(choice)
-            //this is the directory
-            //reseponse.directory --> decides what to do next
+            const directory = response.directory
+            directoryChoice(directory)
             //switch statement to functions calls 
         })
         .catch((err) => {
@@ -46,8 +42,8 @@ function init() {
 };
 
 
-function directoryChoice(choice) {
-    switch (choice) {
+function directoryChoice(directory) {
+    switch (directory) {
         // view
         case 'View all departments':
             db.query('SELECT * FROM department', (err, results) => {
@@ -60,7 +56,7 @@ function directoryChoice(choice) {
             init();
             break;
         case 'View all roles':
-            db.query('SELECT * FROM role', (err, results) => {
+            db.query('SELECT role.id, role.title, department.name AS department,  role.salary FROM role JOIN department ON role.department_id = department.id;', (err, results) => {
                 if (err) {
                     console.error(err);
                 }
@@ -107,6 +103,9 @@ function directoryChoice(choice) {
                 });
             break;
         case 'Add a role':
+            const department = db.query('SELECT * FROM department', (err, results) => {
+                results.map(results => (`${results.id}. ${results.name}`))
+            });
             inquirer.prompt([
                 {
                     type: 'input',
@@ -119,9 +118,11 @@ function directoryChoice(choice) {
                     name: 'salary'
                 },
                 {
-                    type: 'number',
+                    type: 'list',
                     message: 'Enter the department the role belongs to.',
-                    name: 'departmentId'
+                    name: 'departmentId',
+                    choices: department,
+
                 }
             ])
                 .then((results) => {
@@ -141,7 +142,7 @@ function directoryChoice(choice) {
                     })
                     init();
                 });
-            // return console.log('Add a role');
+            return console.log('Add a role');
             break;
         case 'Add an employee':
             return console.log('Add an employee');
