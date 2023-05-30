@@ -11,8 +11,16 @@ const db = mysql.createConnection(
         password: process.env.DB_PW,
         database: 'employee_tracker_db'
     },
-    console.log(`Connected to the database`)
 );
+
+db.connect((err) => {
+    if (err) {
+        console.error('Error connecting to database', err);
+        return;
+    }
+    console.log(`Connected to the database`);
+    init();
+});
 
 function init() {
     inquirer
@@ -33,6 +41,7 @@ function init() {
         ])
         .then((response) => {
             const directory = response.directory
+            console.log(`SELECTED: ${directory}`    );
             directoryChoice(directory)
             //switch statement to functions calls 
         })
@@ -70,7 +79,7 @@ function directoryChoice(directory) {
                 if (err) {
                     console.error(err);
                 }
-                console.log('View all roles');
+                console.log('View all employees');
                 console.table(results);
             });
             init();
@@ -103,8 +112,8 @@ function directoryChoice(directory) {
                 });
             break;
         case 'Add a role':
-            const department = db.query('SELECT * FROM department', (err, results) => {
-                results.map(results => (`${results.id}. ${results.name}`))
+            db.query('SELECT * FROM department', (err, results) => {
+                const departments = results.map(results => (`${results.id}. ${results.name}`))
             });
             inquirer.prompt([
                 {
@@ -126,7 +135,7 @@ function directoryChoice(directory) {
                 }
             ])
                 .then((results) => {
-                    const {roleTitle, salary, departmentId } = results;
+                    const { roleTitle, salary, departmentId } = results;
                     console.log(`the role to be added is ${roleTitle}`)
                     db.query('INSERT INTO department (title, salary, department_id) VALUES (?, ?, ?);', [roleTitle, salary, departmentId], (err, results) => {
                         if (err) {
@@ -142,7 +151,6 @@ function directoryChoice(directory) {
                     })
                     init();
                 });
-            return console.log('Add a role');
             break;
         case 'Add an employee':
             return console.log('Add an employee');
@@ -157,4 +165,3 @@ function directoryChoice(directory) {
     }
 };
 
-init();
